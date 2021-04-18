@@ -1,0 +1,79 @@
+service: todos
+frameworkVersion: '2'
+
+custom:
+  settings:
+    TODOS_TABLE: todos
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  region: eu-west-2
+  environment: ${self:custom.settings}
+  iamRoleStatements:
+   - Effect: "Allow"
+     Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+     Resource:
+      - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.TODOS_TABLE}"
+
+functions:
+  createTodo:
+    handler: handler.createTodo
+    events:
+    - http:
+        path: /todo
+        method: post
+  getAllTodos:
+    handler: handler.getAllTodos
+    events:
+    - http:
+        path: /todos
+        method: get
+  getTodos:
+    handler: handler.getTodos
+    events:
+    - http:
+        path: /todos/{number}
+        method: get
+  getTodo:
+    handler: handler.getTodo
+    events:
+    - http:
+        path: /todo/{id}
+        method: get
+  updateTodo:
+    handler: handler.updateTodo
+    events:
+    - http:
+        path: /todo/{id}
+        method: put
+  deleteTodo:
+    handler: handler.deleteTodo
+    events:
+    - http:
+        path: /todo/{id}
+        method: delete
+  
+
+resources:
+  Resources:
+    PostsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.TODOS_TABLE}
